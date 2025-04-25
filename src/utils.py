@@ -1,17 +1,47 @@
 import argparse
-import pickle
 import configparser
+import pickle
+
 
 
 
 def save_model(model, model_path):
+    """
+    Save a trained model to a specified file path using pickle.
+
+    Parameters
+    ----------
+    model : object
+        Trained model object to be saved.
+    model_path : str
+        Path where the model will be saved.
+
+    Returns
+    -------
+    None
+    """
     with open(model_path, "wb") as f:
         pickle.dump(model, f)
 
+
 def load_model(model_path):
+    """
+    Load a trained model from a pickle file.
+
+    Parameters
+    ----------
+    model_path : str
+        Path to the saved model file.
+
+    Returns
+    -------
+    object
+        Loaded model object.
+    """
     with open(model_path, "rb") as f:
         model = pickle.load(f)
     return model
+
 
 def parse_args():
     """
@@ -26,8 +56,6 @@ def parse_args():
         A Namespace object containing the parsed command line arguments.
         - configuration : str
             Path to the configuration file (default: 'configuration.ini').
-        - eda : str
-            Flag indicating whether to do exploratory data analysis (plot histograms) ('true' or 'false'; default: 'false').
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("--configuration", type=str,
