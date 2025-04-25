@@ -198,10 +198,9 @@ def add_all_features(df, oss_counters):
         DataFrame with added features.
     """
     window_sizes = [1, 5, 7, 15]
-    metrics = literal_eval(oss_counters)
-    for metric in metrics:
+    for oss_counter in oss_counters:
         for ws in window_sizes:
-            df = add_rolling_features(df, metric, ws)
+            df = add_rolling_features(df, oss_counter, ws)
     df["hour"] = df["datetime"].dt.hour
     df = add_ratio_features(df)
     return df
@@ -239,7 +238,7 @@ def process_data_for_network_activity_classification(config):
         Preprocessed DataFrame ready for classification modeling.
     """
     df = read_file(config)
-    oss_counters = config["MODELS"]["OSS_COUNTERS"]
+    oss_counters = literal_eval(["MODELS"]["OSS_COUNTERS"])
     df = pd.concat([add_datetime(group) for _, group in df.groupby("CellName")]).reset_index(drop=True)
     df = add_target(df)
     df = add_all_features(df, oss_counters)

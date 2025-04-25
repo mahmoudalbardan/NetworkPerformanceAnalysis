@@ -1,7 +1,8 @@
 import gradio as gr
 import pandas as pd
 import matplotlib.pyplot as plt
-from data_processing import add_datetime, add_all_features, handle_missing_features
+import matplotlib.dates as mdates
+from data_processing import add_datetime, add_all_features
 from utils import load_model
 
 cell_names = ['3BLTE', '1BLTE', '9BLTE', '4ALTE', '10BLTE', '9ALTE', '4BLTE',
@@ -14,18 +15,32 @@ oss_counters = ['PRBUsageUL', 'PRBUsageDL', 'meanThr_DL', 'meanThr_UL',
                 'maxThr_DL', 'maxThr_UL', 'meanUE_DL', 'meanUE_UL', 'maxUE_DL',
                 'maxUE_UL', 'maxUE_UL+DL']
 
-def prepare_data_for_net_activity():
-    df = pd.read_csv("data/...csv",sep=";")
+def prepare_data_for_net_activity(file_test):
+    df = pd.read_csv(file_test,sep=";")
     df = pd.concat([add_datetime(group) for _, group in df.groupby("CellName")]).reset_index(drop=True)
     df = add_all_features(df, oss_counters)
-    df = handle_missing_features(df)
+    df = df.groupby("CellName", group_keys=False).apply(lambda x: x.bfill())
     return df
 
-def predict2(df):
+def predict_network_activity(file_test):
     model = load_model("./models/network_activity_classifier.pkl")
-    prediction = model.predict(df)
-    label = "Usual" if prediction == 0 else "Unusual"
-    return label
+    df = prepare_data_for_net_activity(file_test)
+    df_to_predict = df.drop(columns=["CellName", "datetime"])
+    df["prediction"] = pd.DataFrame(model.predict(df_to_predict))
+    y = df.loc[df["CellName"] == "2ALTE"].copy()
+    y.sort_values(by="datetime", inplace=True)
+    fig = plt.figure(figsize=(10, 4))
+    ax = fig.add_subplot(111)
+    ax.stem(y["datetime"].iloc[18:30], y["prediction"].iloc[18:30], linefmt='b-', markerfmt='bo', basefmt='r-')
+    ax.xaxis.set_major_locator(mdates.AutoDateLocator())
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d\n%H:%M'))
+    ax.set_yticks([0, 1])
+    ax.set_yticklabels(["Usual", "Unusual"])
+    ax.set_xlabel("Datetime")
+    ax.set_ylabel("Label")
+    ax.set_title("Activity of cell 2ALTE")
+    return fig
+
 
 def load_model_forecasting(cell_name, oss_counter):
     """
@@ -94,11 +109,18 @@ oss_counter_forecasting_interface = gr.Interface(
         gr.Plot(label="Forecast plot", format="png"),
         gr.Dataframe(label="Forecast data")
     ],
-    title="OSS counter forecasting"
-)
+    title="OSS counter forecasting")
+
+predict_network_activity_interface = gr.Interface(
+    fn=predict_network_activity,
+    inputs=[gr.Textbox(label="Path to test data")],
+    outputs=[gr.Plot(label="Prediction", format="png")],
+    title="Cell activity prediction")
 
 
+tabbed_interface = gr.TabbedInterface([oss_counter_forecasting_interface, predict_network_activity_interface],
+                                      tab_names=["OSS counter forecasting", "Cell activity prediction"])
 
 
 if __name__ == "__main__":
-    oss_counter_forecasting_interface.launch(share=True)
+    tabbed_interface.launch(share=True)
