@@ -238,7 +238,7 @@ def process_data_for_network_activity_classification(config):
         Preprocessed DataFrame ready for classification modeling.
     """
     df = read_file(config)
-    oss_counters = literal_eval(["MODELS"]["OSS_COUNTERS"])
+    oss_counters = literal_eval(config["MODELS"]["OSS_COUNTERS"])
     df = pd.concat([add_datetime(group) for _, group in df.groupby("CellName")]).reset_index(drop=True)
     df = add_target(df)
     df = add_all_features(df, oss_counters)
