@@ -176,13 +176,12 @@ def add_ratio_features(df):
     pd.DataFrame
         DataFrame with new ratio features.
     """
-    eps = 1e-6  # to avoid division by zero
-    df["thr_dl_to_ul"] = df["meanThr_DL"] / (df["meanThr_UL"] + eps)
-    df["ue_dl_to_ul"] = df["meanUE_DL"] / (df["meanUE_UL"] + eps)
-    df["prb_dl_to_ul"] = df["PRBUsageDL"] / (df["PRBUsageUL"] + eps)
+    df["thr_dl_to_ul"] = df["meanThr_DL"] / (df["meanThr_UL"] + 1e-6 )
+    df["ue_dl_to_ul"] = df["meanUE_DL"] / (df["meanUE_UL"] + 1e-6 )
+    df["prb_dl_to_ul"] = df["PRBUsageDL"] / (df["PRBUsageUL"] + 1e-6 )
     return df
 
-def add_all_features(df, config):
+def add_all_features(df, oss_counters):
     """
     Add rolling and ratio-based features based on configuration.
 
@@ -199,7 +198,7 @@ def add_all_features(df, config):
         DataFrame with added features.
     """
     window_sizes = [1, 5, 7, 15]
-    metrics = literal_eval(config["MODELS"]["OSS_COUNTERS"])
+    metrics = literal_eval(oss_counters)
     for metric in metrics:
         for ws in window_sizes:
             df = add_rolling_features(df, metric, ws)
@@ -240,9 +239,10 @@ def process_data_for_network_activity_classification(config):
         Preprocessed DataFrame ready for classification modeling.
     """
     df = read_file(config)
+    oss_counters = config["MODELS"]["OSS_COUNTERS"]
     df = pd.concat([add_datetime(group) for _, group in df.groupby("CellName")]).reset_index(drop=True)
     df = add_target(df)
-    df = add_all_features(df, config)
+    df = add_all_features(df, oss_counters)
     df = handle_missing_features(df)
     return df
 
