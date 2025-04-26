@@ -20,8 +20,11 @@ We developed two types of models to build the prediction system:
 2. Classification model:  
    Predicting whether a given set of OSS counter values corresponds to **usual** or **unusual** activity.
 
-
-![Gradio Dashboard](models/results/gradio_oss.png)
+## Gradio Dashboard Output
+Here is the expected gradio dashboard :
+<p align="center">
+  <img src="models/results/gradio_oss.png" alt="Gradio Dashboard Output" width="1000" style="border:2px solid black;">
+</p>
 
 ## 🗂 Project Structure
 
