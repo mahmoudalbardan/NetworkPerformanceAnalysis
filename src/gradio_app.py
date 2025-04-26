@@ -40,13 +40,15 @@ def predict_network_activity(file_test,cell_name):
     fig_prediction = plt.figure(figsize=(10, 4))
     ax = fig_prediction.add_subplot(111)
     ax.stem(y["datetime"].iloc[:96], y["prediction"].iloc[:96], linefmt='b-', markerfmt='bo', basefmt='r-')
-    ax.xaxis.set_major_locator(mdates.AutoDateLocator())
+
+    dates_with_1 = y["datetime"].iloc[:96][y["prediction"].iloc[:96] == 1]
+    ax.set_xticks(dates_with_1)
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d\n%H:%M'))
     ax.set_yticks([0, 1])
     ax.set_yticklabels(["Usual", "Unusual"])
     ax.set_xlabel("Datetime")
     ax.set_ylabel("Label")
-    ax.set_title("Activity of cell 2ALTE")
+    ax.set_title(f"Activity of cell {cell_name}")
     img_metrics_path = "./models/results/network_activity_classifier_metrics.png"
     return img_metrics_path , fig_prediction
 
