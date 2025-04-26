@@ -58,3 +58,4 @@ docker build -t networkapp .
 docker run -p 7860:7860 networkapp
 ```
 7. Open [localhost](http://127.0.0.1:7860) in your browser and test the gradio app ! 
+(when you are working under the *Cell activity prediction* tab, you have to upload the test file `data/test.csv`)
