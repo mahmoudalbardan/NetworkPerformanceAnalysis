@@ -55,6 +55,6 @@ docker build -t networkapp .
 ```
 6.  Run docker container
 ```bash
-docker run -p 5000:5000 networkapp
+docker run -p 7860:7860 networkapp
 ```
-7. Open [localhost](http://127.0.0.1:5000) in your browser and test the gradio app ! 
+7. Open [localhost](http://127.0.0.1:7860) in your browser and test the gradio app ! 

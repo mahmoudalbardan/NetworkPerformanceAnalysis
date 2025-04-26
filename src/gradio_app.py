@@ -144,6 +144,6 @@ tabbed_interface = gr.TabbedInterface([oss_counter_forecasting_interface, predic
 if __name__ == "__main__":
     tabbed_interface.launch(
         server_name="0.0.0.0",
-        server_port=5000,
+        server_port=7860,
         share=False
     )
