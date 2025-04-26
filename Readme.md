@@ -45,7 +45,7 @@ pip install -r requirements.txt
 ```
 
 2. **OPTIONAL**: *Run the training scripts and tests(the models are already trained and saved in the repository;  
-You can add the test run command into your .yml you want to build CI/CD pipeline*.
+You can add the test run command into your .yml file if you want to build CI/CD pipeline*.
 ```bash
 python -m unittest discover -s tests 
 python src/network_activity_classification.py --configuration configuration.ini 
