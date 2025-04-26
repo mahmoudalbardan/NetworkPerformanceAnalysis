@@ -4,12 +4,12 @@ from ast import literal_eval
 
 def read_file(config):
     """
-    Read a CSV file from the path specified in the configuration.
+    Read a csv file from the path specified in the configuration.
 
     Parameters
     ----------
     config : ConfigParser
-        Configuration object containing the file path under the "FILES" section.
+        Configuration file .ini containing the file
 
     Returns
     -------
@@ -208,23 +208,6 @@ def add_all_features(df, oss_counters):
     df.drop(columns=["CellName", "datetime"], inplace=True)
     return df
 
-# def handle_missing_features(df):
-#     """
-#     Backfill missing feature values and drop identifier columns.
-#
-#     Parameters
-#     ----------
-#     df : pd.DataFrame
-#         DataFrame with missing values and 'CellName', 'datetime'.
-#
-#     Returns
-#     -------
-#     pd.DataFrame
-#         Cleaned DataFrame with features ready for modeling.
-#     """
-#     df = df.groupby("CellName", group_keys=False).apply(lambda x: x.bfill())
-#     df.drop(columns=["CellName", "datetime"], inplace=True)
-#     return df
 
 def process_data_for_network_activity_classification(config):
     """

@@ -72,7 +72,7 @@ def forecast_oss_counter_per_cell(df, oss_counters, datetime="datetime", cell_co
 
     df_metrics = pd.DataFrame(list_metrics)
     df_metrics.replace(to_replace=np.inf, value=np.nan, inplace=True)
-    df_metrics.to_csv("./models/results/oss_counters_forecasting_metrics.csv.csv", sep="|")
+    df_metrics.to_csv("./models/results/oss_counters_forecasting_metrics.csv", sep="|")
 
 
 def main(args):
