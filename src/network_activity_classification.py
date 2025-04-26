@@ -45,7 +45,7 @@ def fit_evaluate_model(data_processed):
         model.fit(X_train, y_train)
         y_proba = model.predict_proba(X_val)[:, 1]
 
-        auc_scores = []
+
         f1_scores = []
         precision_scores = []
         recall_scores = []
@@ -62,16 +62,13 @@ def fit_evaluate_model(data_processed):
             precision_scores.append(precision)
             accuracy_scores.append(accuracy)
             recall_scores.append(recall)
-            auc_scores.append(auc)
             f1_scores.append(f1)
 
-        auc_score_all_folds.append(auc_scores)
         f1_score_all_folds.append(f1_scores)
         recall_score_all_folds.append(recall_scores)
         accuracy_score_all_folds.append(accuracy_scores)
         precision_score_all_folds.append(precision_scores)
 
-    average_auc = np.mean(np.array(auc_score_all_folds), axis=0)
     average_f1 = np.mean(np.array(f1_score_all_folds), axis=0)
     average_precision = np.mean(np.array(precision_score_all_folds), axis=0)
     average_accuracy = np.mean(np.array(accuracy_score_all_folds), axis=0)
@@ -79,7 +76,6 @@ def fit_evaluate_model(data_processed):
     model.fit(X, y)
 
     fig, ax = plt.subplots(nrows = 1, ncols = 1,figsize=(15,6))
-    ax.plot(np.arange(0,1,0.01), average_auc, label="AUC")
     ax.plot(np.arange(0, 1, 0.01), average_f1, label="F1score")
     ax.plot(np.arange(0, 1, 0.01), average_precision, label="Precision")
     ax.plot(np.arange(0, 1, 0.01), average_accuracy,label="Accuracy")
