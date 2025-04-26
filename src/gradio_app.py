@@ -17,7 +17,7 @@ oss_counters = ['PRBUsageUL', 'PRBUsageDL', 'meanThr_DL', 'meanThr_UL',
                 'maxUE_UL', 'maxUE_UL+DL']
 
 def prepare_data_for_net_activity(file_test):
-    df = pd.read_csv(file_test,sep=";")
+    df = pd.read_csv(file_test.name,sep=";")
     df = pd.concat([add_datetime(group) for _, group in df.groupby("CellName")]).reset_index(drop=True)
     window_sizes = [1, 5, 7, 15]
     for oss_counter in oss_counters:
@@ -28,6 +28,7 @@ def prepare_data_for_net_activity(file_test):
     df.dropna(how="any", inplace=True)
     df.rename(columns={"Unusual": "target"}, inplace=True)
     return df
+
 
 def predict_network_activity(file_test,cell_name):
     model = load_model("./models/network_activity_classifier.pkl")
@@ -131,7 +132,7 @@ oss_counter_forecasting_interface = gr.Interface(
 
 predict_network_activity_interface = gr.Interface(
     fn=predict_network_activity,
-    inputs=[gr.Textbox(label="Path to test data"),gr.Radio(cell_names, label="Cell Name")],
+    inputs = [gr.File(label="Upload test file"),gr.Radio(cell_names, label="Cell Name") ],
     outputs=[gr.Image(label="Model Performances", format="png"), gr.Plot(label="Model Prediction", format="png")],
     title="Cell activity prediction")
 
@@ -141,4 +142,7 @@ tabbed_interface = gr.TabbedInterface([oss_counter_forecasting_interface, predic
 
 
 if __name__ == "__main__":
-    tabbed_interface.launch(share=True)
+    tabbed_interface.launch(
+        server_port=5000,
+        share=False
+    )
