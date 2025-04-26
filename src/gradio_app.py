@@ -2,7 +2,7 @@ import gradio as gr
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-from data_processing import add_datetime, add_all_features
+from data_processing import add_datetime, add_rolling_features, add_ratio_features
 from utils import load_model
 
 cell_names = ['3BLTE', '1BLTE', '9BLTE', '4ALTE', '10BLTE', '9ALTE', '4BLTE',
@@ -18,20 +18,26 @@ oss_counters = ['PRBUsageUL', 'PRBUsageDL', 'meanThr_DL', 'meanThr_UL',
 def prepare_data_for_net_activity(file_test):
     df = pd.read_csv(file_test,sep=";")
     df = pd.concat([add_datetime(group) for _, group in df.groupby("CellName")]).reset_index(drop=True)
-    df = add_all_features(df, oss_counters)
-    df = df.groupby("CellName", group_keys=False).apply(lambda x: x.bfill())
+    window_sizes = [1, 5, 7, 15]
+    for oss_counter in oss_counters:
+        for ws in window_sizes:
+            df = add_rolling_features(df, oss_counter, ws)
+    df["hour"] = df["datetime"].dt.hour
+    df = add_ratio_features(df)
+    df.dropna(how="any", inplace=True)
+    df.rename(columns={"Unusual": "target"}, inplace=True)
     return df
 
-def predict_network_activity(file_test):
+def predict_network_activity(file_test,cell_name):
     model = load_model("./models/network_activity_classifier.pkl")
     df = prepare_data_for_net_activity(file_test)
     df_to_predict = df.drop(columns=["CellName", "datetime"])
     df["prediction"] = pd.DataFrame(model.predict(df_to_predict))
-    y = df.loc[df["CellName"] == "2ALTE"].copy()
+    y = df.loc[df["CellName"] == cell_name].copy()
     y.sort_values(by="datetime", inplace=True)
     fig = plt.figure(figsize=(10, 4))
     ax = fig.add_subplot(111)
-    ax.stem(y["datetime"].iloc[18:30], y["prediction"].iloc[18:30], linefmt='b-', markerfmt='bo', basefmt='r-')
+    ax.stem(y["datetime"].iloc[:96], y["prediction"].iloc[:96], linefmt='b-', markerfmt='bo', basefmt='r-')
     ax.xaxis.set_major_locator(mdates.AutoDateLocator())
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d\n%H:%M'))
     ax.set_yticks([0, 1])
@@ -113,7 +119,7 @@ oss_counter_forecasting_interface = gr.Interface(
 
 predict_network_activity_interface = gr.Interface(
     fn=predict_network_activity,
-    inputs=[gr.Textbox(label="Path to test data")],
+    inputs=[gr.Textbox(label="Path to test data"),gr.Radio(cell_names, label="Cell Name")],
     outputs=[gr.Plot(label="Prediction", format="png")],
     title="Cell activity prediction")
 

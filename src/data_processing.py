@@ -116,28 +116,28 @@ def process_oss_counters(cell_name, df_one_cell, oss_counters):
     df_processed["CellName"] = df_processed["CellName"].fillna(cell_name)
     return df_processed
 
-def add_target(df):
-    """
-    Add a binary classification target for 24-hour future 'Unusual' status.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        DataFrame with datetime and 'Unusual' column.
-
-    Returns
-    -------
-    pd.DataFrame
-        DataFrame with a new 'target' column.
-    """
-    df["datetime_after_24h"] = df["datetime"] + pd.Timedelta(hours=24)
-    future = df[["CellName", "datetime", "Unusual"]].copy()
-    future.rename(columns={"datetime": "datetime_after_24h", "Unusual": "Unusual_after_24h"}, inplace=True)
-    df = df.merge(future, on=["CellName", "datetime_after_24h"], how="left")
-    df.rename(columns={"Unusual_after_24h": "target"}, inplace=True)
-    df.drop(columns=["datetime_after_24h", "Unusual"], inplace=True)
-    df = df[~df["target"].isna()].reset_index(drop=True)
-    return df
+#def add_target(df):
+    # """
+    # Add a binary classification target for 24-hour future 'Unusual' status.
+    #
+    # Parameters
+    # ----------
+    # df : pd.DataFrame
+    #     DataFrame with datetime and 'Unusual' column.
+    #
+    # Returns
+    # -------
+    # pd.DataFrame
+    #     DataFrame with a new 'target' column.
+    # """
+    #df["datetime_after_24h"] = df["datetime"] + pd.Timedelta(hours=24)
+    #future = df[["CellName", "datetime", "Unusual"]].copy()
+    #future.rename(columns={"datetime": "datetime_after_24h", "Unusual": "Unusual_after_24h"}, inplace=True)
+    #df = df.merge(future, on=["CellName", "datetime_after_24h"], how="left")
+    #df.rename(columns={"Unusual_after_24h": "target"}, inplace=True)
+    #df.drop(columns=["datetime_after_24h", "Unusual"], inplace=True)
+    #df = df[~df["target"].isna()].reset_index(drop=True)
+    #return df
 
 def add_rolling_features(df, metric, window_size):
     """
@@ -198,30 +198,33 @@ def add_all_features(df, oss_counters):
         DataFrame with added features.
     """
     window_sizes = [1, 5, 7, 15]
+    df.rename(columns={"Unusual": "target"}, inplace=True)
     for oss_counter in oss_counters:
         for ws in window_sizes:
             df = add_rolling_features(df, oss_counter, ws)
     df["hour"] = df["datetime"].dt.hour
     df = add_ratio_features(df)
-    return df
-
-def handle_missing_features(df):
-    """
-    Backfill missing feature values and drop identifier columns.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        DataFrame with missing values and 'CellName', 'datetime'.
-
-    Returns
-    -------
-    pd.DataFrame
-        Cleaned DataFrame with features ready for modeling.
-    """
-    df = df.groupby("CellName", group_keys=False).apply(lambda x: x.bfill())
+    df.dropna(how="any", inplace=True)
     df.drop(columns=["CellName", "datetime"], inplace=True)
     return df
+
+# def handle_missing_features(df):
+#     """
+#     Backfill missing feature values and drop identifier columns.
+#
+#     Parameters
+#     ----------
+#     df : pd.DataFrame
+#         DataFrame with missing values and 'CellName', 'datetime'.
+#
+#     Returns
+#     -------
+#     pd.DataFrame
+#         Cleaned DataFrame with features ready for modeling.
+#     """
+#     df = df.groupby("CellName", group_keys=False).apply(lambda x: x.bfill())
+#     df.drop(columns=["CellName", "datetime"], inplace=True)
+#     return df
 
 def process_data_for_network_activity_classification(config):
     """
@@ -240,9 +243,7 @@ def process_data_for_network_activity_classification(config):
     df = read_file(config)
     oss_counters = literal_eval(config["MODELS"]["OSS_COUNTERS"])
     df = pd.concat([add_datetime(group) for _, group in df.groupby("CellName")]).reset_index(drop=True)
-    df = add_target(df)
     df = add_all_features(df, oss_counters)
-    df = handle_missing_features(df)
     return df
 
 def process_data_for_oss_counters_forecasting(config):
