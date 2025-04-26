@@ -34,13 +34,25 @@ def predict_network_activity(file_test,cell_name):
     model = load_model("./models/network_activity_classifier.pkl")
     df = prepare_data_for_net_activity(file_test)
     df_to_predict = df.drop(columns=["CellName", "datetime"])
+    features = df_to_predict.columns
+    feature_importance = model.feature_importances_
+    feature_importance_df = pd.DataFrame({"Feature": features, "Importance": feature_importance})
+    feature_importance_df = feature_importance_df.sort_values(by="Importance", ascending=False)
+
+    # fig feature importance
+    fig_feature_importance = plt.figure(figsize=(10, 4))
+    ax_feature_importance = fig_feature_importance.add_subplot(111)
+    ax_feature_importance.barh(feature_importance_df["Feature"].iloc[:7], feature_importance_df["Importance"].iloc[:7], color='r')
+    ax_feature_importance.set_xlabel("Feature Importance")
+    ax_feature_importance.set_title("Feature Importance")
+
+
     df["prediction"] = pd.DataFrame(model.predict(df_to_predict))
     y = df.loc[df["CellName"] == cell_name].copy()
     y.sort_values(by="datetime", inplace=True)
     fig_prediction = plt.figure(figsize=(10, 4))
     ax = fig_prediction.add_subplot(111)
     ax.stem(y["datetime"].iloc[:96], y["prediction"].iloc[:96], linefmt='b-', markerfmt='bo', basefmt='r-')
-
     dates_with_1 = y["datetime"].iloc[:96][y["prediction"].iloc[:96] == 1]
     ax.set_xticks(dates_with_1)
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d\n%H:%M'))
@@ -50,7 +62,7 @@ def predict_network_activity(file_test,cell_name):
     ax.set_ylabel("Label")
     ax.set_title(f"Activity of cell {cell_name}")
     img_metrics_path = "./models/results/network_activity_classifier_metrics.png"
-    return img_metrics_path , fig_prediction
+    return img_metrics_path , fig_feature_importance, fig_prediction
 
 
 def load_model_forecasting(cell_name, oss_counter):
@@ -135,7 +147,8 @@ oss_counter_forecasting_interface = gr.Interface(
 predict_network_activity_interface = gr.Interface(
     fn=predict_network_activity,
     inputs = [gr.File(label="Upload test file"),gr.Radio(cell_names, label="Cell Name") ],
-    outputs=[gr.Image(label="Model Performances", format="png"), gr.Plot(label="Model Prediction", format="png")],
+    outputs=[gr.Image(label="Model Performances", format="png"), gr.Plot(label="Feature importances", format="png"),
+             gr.Plot(label="Model Prediction", format="png")],
     title="Cell activity prediction")
 
 
