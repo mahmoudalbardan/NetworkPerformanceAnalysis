@@ -24,15 +24,15 @@ We developed two types of models to build the prediction system:
 Here is the expected gradio dashboard :
 ![Gradio Dashboard](models/results/gradio_oss.png)
 
-## 🗂 Project Structure
+## Project Structure
 
-- `src/` – Source code for preprocessing, modeling, evaluation and building a Gradio application.
-- `models/` – Saved trained models (oss counters forecasting models and classifier performance degradation).
-- `tests/` – Unit tests for validation.
-- `experimental/` – **Experimental notebooks that you can consult to check the outcome of the data processing step and the forecastings**.
-- `configuration.ini` – Configuration file used during launch.
-- `Dockerfile` – Docker setup.
-- `requirements.txt` – Python dependencies.
+- `src/` – source code for preprocessing, modeling, evaluation and building a Gradio application.
+- `models/` – saved trained models (oss counters forecasting models and classifier performance degradation).
+- `tests/` – unit tests for validation.
+- `experimental/` – **experimental notebooks that you can consult to check the outcome of the data processing step and the forecastings**.
+- `configuration.ini` – configuration file used during launch.
+- `Dockerfile` – docker file.
+- `requirements.txt` – python packages.
 
 ## 🚀 Launch and test the app on your Local Machine
 
@@ -44,8 +44,10 @@ cd NetworkPerformanceAnalysis
 pip install -r requirements.txt
 ```
 
-2. Run the training scripts (Optional since the models already trained and saved in the repository)
+2. **OPTIONAL**: *Run the training scripts and tests(the models are already trained and saved in the repository;  
+You can add the test run command into your .yml you want to build CI/CD pipeline*.
 ```bash
+python -m unittest discover -s tests 
 python src/network_activity_classification.py --configuration configuration.ini 
 python src/oss_counters_forecasting.py --configuration configuration.ini 
 ```
@@ -53,13 +55,13 @@ The network activity classification model will be automatically saved at `models
 while the OSS counter forecasting models will be stored individually under
 `models/oss_counters_forecasting_models/`, following the name `prophet_{cell_name}_{oss_counter}.pkl`
 
-5. Build docker image
+3. Build docker image
 ```bash
 docker build -t networkapp .
 ```
-6.  Run docker container
+4.  Run docker container
 ```bash
 docker run -p 7860:7860 networkapp
 ```
-7. Open [localhost](http://127.0.0.1:7860) in your browser and test the gradio app ! 
+5. Open [localhost](http://127.0.0.1:7860) in your browser and test the gradio app ! 
 (when you are working under the *Cell activity prediction* tab, you have to upload the test file `data/test.csv`)
