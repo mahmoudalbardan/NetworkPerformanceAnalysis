@@ -5,6 +5,7 @@ import matplotlib.dates as mdates
 from data_processing import add_datetime, add_rolling_features, add_ratio_features
 from utils import load_model
 
+
 cell_names = ['3BLTE', '1BLTE', '9BLTE', '4ALTE', '10BLTE', '9ALTE', '4BLTE',
               '4CLTE', '6CLTE', '5CLTE', '7BLTE', '8CLTE', '7ULTE', '6WLTE',
               '7VLTE', '7WLTE', '5ALTE', '6ALTE', '6ULTE', '3CLTE', '5BLTE',
@@ -35,8 +36,8 @@ def predict_network_activity(file_test,cell_name):
     df["prediction"] = pd.DataFrame(model.predict(df_to_predict))
     y = df.loc[df["CellName"] == cell_name].copy()
     y.sort_values(by="datetime", inplace=True)
-    fig = plt.figure(figsize=(10, 4))
-    ax = fig.add_subplot(111)
+    fig_prediction = plt.figure(figsize=(10, 4))
+    ax = fig_prediction.add_subplot(111)
     ax.stem(y["datetime"].iloc[:96], y["prediction"].iloc[:96], linefmt='b-', markerfmt='bo', basefmt='r-')
     ax.xaxis.set_major_locator(mdates.AutoDateLocator())
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d\n%H:%M'))
@@ -45,7 +46,8 @@ def predict_network_activity(file_test,cell_name):
     ax.set_xlabel("Datetime")
     ax.set_ylabel("Label")
     ax.set_title("Activity of cell 2ALTE")
-    return fig
+    img_metrics_path = "./models/results/network_activity_classifier_metrics.png"
+    return img_metrics_path , fig_prediction
 
 
 def load_model_forecasting(cell_name, oss_counter):
@@ -90,7 +92,15 @@ def oss_counter_forecasting(cell_name, oss_counter, nb_points):
     future = pd.date_range(start=historical_data["ds"].max(), periods=int(nb_points)*96, freq="15min")
     future_df = pd.DataFrame({"ds": future})
     forecast = model.predict(future_df)
-
+    df_metrics = pd.read_csv("./models/results/oss_counters_forecasting_metrics.csv",sep="|")
+    df_metrics_agg = df_metrics.groupby("oss_counter").agg(
+       {"RMSE": "mean", "MAE": "mean", "MAPE": "mean"}
+    ).reset_index()
+    df_metrics_cell = df_metrics[(df_metrics["CellName"] == cell_name)&
+                                 (df_metrics["oss_counter"] == oss_counter)][["CellName","oss_counter","MAE","RMSE","MAPE"]]
+    df_metrics_cell.columns = ["Cell Name", "OSS Counter", "MAE", "RMSE", "MAPE"]
+    df_metrics_oss_counter = df_metrics_agg[(df_metrics_agg["oss_counter"] == oss_counter)][["oss_counter","MAE","RMSE","MAPE"]]
+    df_metrics_oss_counter.columns = ["OSS Counter", "MAE", "RMSE", "MAPE"]
     fig = plt.figure(figsize=(10, 4))
     ax = fig.add_subplot(111)
     ax.plot(historical_data["ds"], historical_data["y"], label="Historical Data", color="k")
@@ -101,7 +111,7 @@ def oss_counter_forecasting(cell_name, oss_counter, nb_points):
     ax.set_ylabel("Value")
     ax.legend()
 
-    return fig, forecast[["ds", "yhat"]]
+    return fig, df_metrics_cell, df_metrics_oss_counter, forecast[["ds", "yhat"]]
 
 
 oss_counter_forecasting_interface = gr.Interface(
@@ -113,6 +123,8 @@ oss_counter_forecasting_interface = gr.Interface(
     ],
     outputs=[
         gr.Plot(label="Forecast plot", format="png"),
+        gr.Dataframe(label="Model performance for this specific cell/oss couple"),
+        gr.Dataframe(label="Model performance for this specific OSS accross all cells"),
         gr.Dataframe(label="Forecast data")
     ],
     title="OSS counter forecasting")
@@ -120,7 +132,7 @@ oss_counter_forecasting_interface = gr.Interface(
 predict_network_activity_interface = gr.Interface(
     fn=predict_network_activity,
     inputs=[gr.Textbox(label="Path to test data"),gr.Radio(cell_names, label="Cell Name")],
-    outputs=[gr.Plot(label="Prediction", format="png")],
+    outputs=[gr.Image(label="Model Performances", format="png"), gr.Plot(label="Model Prediction", format="png")],
     title="Cell activity prediction")
 
 

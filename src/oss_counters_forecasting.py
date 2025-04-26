@@ -67,18 +67,12 @@ def forecast_oss_counter_per_cell(df, oss_counters, datetime="datetime", cell_co
                 )
 
                 list_models.append(model)
-            except Exception as e:
-                print(f"Skipping {cell}-{oss_counter} due to error: {e}")
+            except:
+                print(f"Skipping {cell}-{oss_counter} due to error")
 
     df_metrics = pd.DataFrame(list_metrics)
     df_metrics.replace(to_replace=np.inf, value=np.nan, inplace=True)
-
-    # Aggregate metrics by oss_counter
-    df_metrics = df_metrics.groupby("oss_counter").agg(
-        {"RMSE": "mean", "MAE": "mean", "MAPE": "mean"}
-    ).reset_index()
-
-    return df_metrics
+    df_metrics.to_csv("./models/results/oss_counters_forecasting_metrics.csv", sep="|")
 
 
 def main(args):
@@ -99,14 +93,8 @@ def main(args):
     """
     config = get_config(args.configuration)
     df_processed = process_data_for_oss_counters_forecasting(config)
-
-    df_metrics = forecast_oss_counter_per_cell(
-        df_processed,
-        oss_counters=literal_eval(config["MODELS"]["OSS_COUNTERS"])
-    )
-
-    print(df_metrics)
-
+    forecast_oss_counter_per_cell(df_processed,
+        oss_counters=literal_eval(config["MODELS"]["OSS_COUNTERS"]))
 
 if __name__ == "__main__":
     args = parse_args()

@@ -32,7 +32,7 @@ def fit_evaluate_model(data_processed):
         random_state=42
     )
 
-    skf = StratifiedKFold(n_splits=3, shuffle=True, random_state=42)
+    skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
 
     auc_score_all_folds = []
     f1_score_all_folds = []
@@ -89,12 +89,11 @@ def fit_evaluate_model(data_processed):
     ax.axvline(x=best_threshold, ymin=0, ymax=1, color="black",
                label=f"Best probability threshold for f1 score:{best_threshold:.2f}", linestyle="--")
     ax.text(best_threshold, -0.03, f"{best_threshold:.2f}", color='black', fontsize=9)
-    ax.set_title("Metrics")
+    ax.set_title("Different classification metrics for gradient boosting classifier with 5 folds cross-validation accross different prediction probability thresholds")
     ax.set_xlabel(" Prediction probability threshold")
     ax.set_ylabel(" Value")
-    plt.tight_layout()
-    plt.legend(loc="best")
-    plt.show()
+    ax.legend(loc="best")
+    fig.savefig("./models/results/network_activity_classifier_metrics.png")
     return model
 
 
