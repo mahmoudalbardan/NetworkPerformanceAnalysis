@@ -50,7 +50,7 @@ def predict_network_activity(file_test,cell_name):
     df["prediction"] = pd.DataFrame(model.predict(df_to_predict))
     y = df.loc[df["CellName"] == cell_name].copy()
     y.sort_values(by="datetime", inplace=True)
-    fig_prediction = plt.figure(figsize=(10, 4))
+    fig_prediction = plt.figure(figsize=(15, 6))
     ax = fig_prediction.add_subplot(111)
     ax.stem(y["datetime"].iloc[:96], y["prediction"].iloc[:96], linefmt='b-', markerfmt='bo', basefmt='r-')
     dates_with_1 = y["datetime"].iloc[:96][y["prediction"].iloc[:96] == 1]
@@ -61,6 +61,7 @@ def predict_network_activity(file_test,cell_name):
     ax.set_xlabel("Datetime")
     ax.set_ylabel("Label")
     ax.set_title(f"Activity of cell {cell_name}")
+    plt.xticks(rotation=35)
     img_metrics_path = "./models/results/network_activity_classifier_metrics.png"
     return img_metrics_path , fig_feature_importance, fig_prediction
 
@@ -75,16 +76,16 @@ def oss_counter_forecasting(cell_name, oss_counter, nb_points):
     future = pd.date_range(start=historical_data["ds"].max(), periods=int(nb_points)*96, freq="15min")
     future_df = pd.DataFrame({"ds": future})
     forecast = model.predict(future_df)
-    df_metrics = pd.read_csv("./models/results/oss_counters_forecasting_metrics.csv",sep="|")
+    df_metrics = pd.read_csv("./models/results/oss_counters_forecasting_metrics.csv",sep=",")
     df_metrics_agg = df_metrics.groupby("oss_counter").agg(
        {"RMSE": "mean", "MAE": "mean", "MAPE": "mean"}
     ).reset_index()
     df_metrics_cell = df_metrics[(df_metrics["CellName"] == cell_name)&
                                  (df_metrics["oss_counter"] == oss_counter)][["CellName","oss_counter","MAE","RMSE","MAPE"]]
     df_metrics_cell.columns = ["Cell Name", "OSS Counter", "MAE", "RMSE", "MAPE"]
-    df_metrics_oss_counter = df_metrics_agg[(df_metrics_agg["oss_counter"] == oss_counter)][["oss_counter","MAE","RMSE","MAPE"]]
+    df_metrics_oss_counter = df_metrics_agg[["oss_counter","MAE","RMSE","MAPE"]]#[(df_metrics_agg["oss_counter"] == oss_counter)]
     df_metrics_oss_counter.columns = ["OSS Counter", "MAE", "RMSE", "MAPE"]
-    fig = plt.figure(figsize=(10, 4))
+    fig = plt.figure(figsize=(10, 3))
     ax = fig.add_subplot(111)
     ax.plot(historical_data["ds"], historical_data["y"], label="Historical Data", color="k")
     ax.plot(forecast["ds"], forecast["yhat"], label="Forecast", color="b", linestyle="dashed")
@@ -115,7 +116,8 @@ oss_counter_forecasting_interface = gr.Interface(
 predict_network_activity_interface = gr.Interface(
     fn=predict_network_activity,
     inputs = [gr.File(label="Upload test file"),gr.Radio(cell_names, label="Cell Name") ],
-    outputs=[gr.Image(label="Model Performances", format="png"), gr.Plot(label="Feature importances", format="png"),
+    outputs=[gr.Image(label="Model Performances", format="png"),
+             gr.Plot(label="Feature importances", format="png"),
              gr.Plot(label="Model Prediction", format="png")],
     title="Cell activity prediction")
 
