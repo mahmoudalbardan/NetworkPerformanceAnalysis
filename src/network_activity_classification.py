@@ -1,26 +1,24 @@
-from data_processing import process_data_for_network_activity_classification
-from utils import get_config, parse_args, save_model
-from sklearn.model_selection import StratifiedKFold
-from sklearn.ensemble import GradientBoostingClassifier
-from sklearn.metrics import roc_auc_score, f1_score, precision_score, recall_score, accuracy_score
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.model_selection import StratifiedKFold
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.metrics import f1_score, precision_score, recall_score, accuracy_score
+from utils import get_config, parse_args, save_model
+from data_processing import process_data_for_network_activity_classification
 
 def fit_evaluate_model(data_processed):
     """
-    Train and evaluate a Gradient Boosting model using Stratified K-Fold cross-validation.
+    Train and evaluate a gradient boosting classifier using stratified 5-Fold cross-validation.
 
     Parameters
     ----------
     data_processed : pd.DataFrame
-        Preprocessed dataset containing features and a binary 'target' column.
+        Processed dataset
 
     Returns
     -------
-    GradientBoostingClassifier
-        Trained model on the full dataset.
-    list of float
-        List of AUC scores for each fold in cross-validation.
+    model: GradientBoostingClassifier object
+        Trained model
     """
     df_X = data_processed.drop(columns=["target"])
     df_y = data_processed["target"]
@@ -83,9 +81,9 @@ def fit_evaluate_model(data_processed):
     ax.axvline(x=best_threshold, ymin=0, ymax=1, color="black",
                label=f"Best probability threshold for f1 score:{best_threshold:.2f}", linestyle="--")
     ax.text(best_threshold, -0.03, f"{best_threshold:.2f}", color='black', fontsize=9)
-    ax.set_title("Different classification metrics for gradient boosting classifier with 5 folds cross-validation accross different prediction probability thresholds")
-    ax.set_xlabel(" Prediction probability threshold")
-    ax.set_ylabel(" Value")
+    ax.set_title("Different classification metrics for gradient boosting classifier with 5 folds cross-validation across different prediction probability thresholds")
+    ax.set_xlabel("Prediction probability threshold")
+    ax.set_ylabel("Value")
     ax.legend(loc="best")
     fig.savefig("./models/results/network_activity_classifier_metrics.png")
     return model
@@ -93,16 +91,7 @@ def fit_evaluate_model(data_processed):
 
 def main(args):
     """
-    Main function to load config, preprocess data, train and evaluate model, and save the result.
-
-    Parameters
-    ----------
-    args : argparse.Namespace
-        Command-line arguments with at least a 'configuration' attribute.
-
-    Returns
-    -------
-    None
+    main function.
     """
     config = get_config(args.configuration)
     df_processed = process_data_for_network_activity_classification(config)

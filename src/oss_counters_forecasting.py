@@ -1,15 +1,16 @@
-import pandas as pd
-from data_processing import process_data_for_oss_counters_forecasting
-from utils import get_config, parse_args, save_model
-from sklearn.metrics import mean_absolute_error, mean_squared_error
 import numpy as np
-from prophet import Prophet
+import pandas as pd
 from ast import literal_eval
+from sklearn.metrics import mean_absolute_error, mean_squared_error
+from prophet import Prophet
+from utils import get_config, parse_args, save_model
+from data_processing import process_data_for_oss_counters_forecasting
 
 
 def forecast_oss_counter_per_cell(df, oss_counters, datetime="datetime", cell_col="CellName"):
     """
-    Forecast OSS counters per cell using Prophet and evaluate forecast accuracy.
+    Forecast OSS counters per cell using Prophet, evaluate model (MAE, RMSE, MAPE)
+    and save the results.
 
     Parameters
     ----------
@@ -18,14 +19,9 @@ def forecast_oss_counter_per_cell(df, oss_counters, datetime="datetime", cell_co
     oss_counters : list of str
         List of OSS counter names to forecast.
     datetime : str, optional
-        Column name representing the datetime, by default "datetime".
+        Datetime column, by default "datetime".
     cell_col : str, optional
         Column name representing the cell name, by default "CellName".
-
-    Returns
-    -------
-    pd.DataFrame
-        Aggregated evaluation metrics (MAE, RMSE, MAPE) per OSS counter.
     """
     list_metrics = []
     list_models = []
@@ -36,14 +32,14 @@ def forecast_oss_counter_per_cell(df, oss_counters, datetime="datetime", cell_co
             prophet_df = group.rename(columns={datetime: "ds", oss_counter: "y"})
 
             # Train/Validation split: last 24h = 96*4 steps for 15-min intervals
-            train_df = prophet_df[['ds', 'y']].dropna().sort_values('ds').iloc[:-96 * 4].reset_index(drop=True)
-            val_df = prophet_df[['ds', 'y']].dropna().sort_values('ds').iloc[-96 * 4:].reset_index(drop=True)
+            train_df = prophet_df[["ds", "y"]].dropna().sort_values("ds").iloc[:-96 * 4].reset_index(drop=True)
+            val_df = prophet_df[["ds", "y"]].dropna().sort_values("ds").iloc[-96 * 4:].reset_index(drop=True)
 
             try:
                 model = Prophet(daily_seasonality=True)
                 model.fit(train_df)
 
-                future_df = pd.DataFrame({'ds': val_df["ds"].values})
+                future_df = pd.DataFrame({"ds": val_df["ds"].values})
                 forecast = model.predict(future_df)
 
                 y_pred = forecast["yhat"].values
@@ -63,12 +59,12 @@ def forecast_oss_counter_per_cell(df, oss_counters, datetime="datetime", cell_co
 
                 save_model(
                     model,
-                    f"./models/oss_counters_forecasting_models/{'_'.join(('prophet', cell, oss_counter))}.pkl"
+                    f"./models/oss_counters_forecasting_models/{'_'.join(("prophet", cell, oss_counter))}.pkl"
                 )
 
                 list_models.append(model)
             except:
-                print(f"Skipping {cell}-{oss_counter} due to error")
+                print(f"Skipping {cell}-{oss_counter}")
 
     df_metrics = pd.DataFrame(list_metrics)
     df_metrics.replace(to_replace=np.inf, value=np.nan, inplace=True)
@@ -77,19 +73,7 @@ def forecast_oss_counter_per_cell(df, oss_counters, datetime="datetime", cell_co
 
 def main(args):
     """
-    Main entry point for OSS counter forecasting.
-
-    Loads configuration, processes the data, trains Prophet models per cell/metric,
-    and prints aggregated forecast evaluation metrics.
-
-    Parameters
-    ----------
-    args : argparse.Namespace
-        Command-line arguments with a 'configuration' attribute.
-
-    Returns
-    -------
-    None
+    main function.
     """
     config = get_config(args.configuration)
     df_processed = process_data_for_oss_counters_forecasting(config)

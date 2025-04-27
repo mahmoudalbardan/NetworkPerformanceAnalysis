@@ -1,20 +1,20 @@
-import gradio as gr
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-from data_processing import add_datetime, add_rolling_features, add_ratio_features
+import gradio as gr
 from utils import load_model
+from data_processing import add_datetime, add_rolling_features, add_ratio_features
 
 
-cell_names = ['3BLTE', '1BLTE', '9BLTE', '4ALTE', '10BLTE', '9ALTE', '4BLTE',
-              '4CLTE', '6CLTE', '5CLTE', '7BLTE', '8CLTE', '7ULTE', '6WLTE',
-              '7VLTE', '7WLTE', '5ALTE', '6ALTE', '6ULTE', '3CLTE', '5BLTE',
-              '8ALTE', '8BLTE', '6BLTE', '10CLTE', '7CLTE', '3ALTE', '1CLTE',
-              '2ALTE', '10ALTE', '1ALTE', '6VLTE', '7ALTE']
+cell_names = ["3BLTE", "1BLTE", "9BLTE", "4ALTE", "10BLTE", "9ALTE", "4BLTE",
+              "4CLTE", "6CLTE", "5CLTE", "7BLTE", "8CLTE", "7ULTE", "6WLTE",
+              "7VLTE", "7WLTE", "5ALTE", "6ALTE", "6ULTE", "3CLTE", "5BLTE",
+              "8ALTE", "8BLTE", "6BLTE", "10CLTE", "7CLTE", "3ALTE", "1CLTE",
+              "2ALTE", "10ALTE", "1ALTE", "6VLTE", "7ALTE"]
 
-oss_counters = ['PRBUsageUL', 'PRBUsageDL', 'meanThr_DL', 'meanThr_UL',
-                'maxThr_DL', 'maxThr_UL', 'meanUE_DL', 'meanUE_UL', 'maxUE_DL',
-                'maxUE_UL', 'maxUE_UL+DL']
+oss_counters = ["PRBUsageUL", "PRBUsageDL", "meanThr_DL", "meanThr_UL",
+                "maxThr_DL", "maxThr_UL", "meanUE_DL", "meanUE_UL", "maxUE_DL",
+                "maxUE_UL", "maxUE_UL+DL"]
 
 def prepare_data_for_net_activity(file_test):
     df = pd.read_csv(file_test.name,sep=";")
@@ -66,42 +66,10 @@ def predict_network_activity(file_test,cell_name):
 
 
 def load_model_forecasting(cell_name, oss_counter):
-    """
-    Load a forecasting model for a specific cell and OSS counter.
-
-    Parameters
-    ----------
-    cell_name : str
-        Name of the cell.
-    oss_counter : str
-        Name of the OSS counter.
-
-    Returns
-    -------
-    Prophet
-        Loaded forecasting model.
-    """
     return load_model(f"models/oss_counters_forecasting_models/{"_".join(("prophet", cell_name, oss_counter))}.pkl")
 
 
 def oss_counter_forecasting(cell_name, oss_counter, nb_points):
-    """
-    Generate and plot future forecasts for a given cell and OSS counter.
-
-    Parameters
-    ----------
-    cell_name : str
-        Name of the cell.
-    oss_counter : str
-        Name of the OSS counter.
-    nb_points : int
-        Number of days to forecast (each day = 96 time intervals of 15min).
-
-    Returns
-    -------
-    tuple
-        Matplotlib figure with forecast plot and a DataFrame with forecasted values.
-    """
     model = load_model_forecasting(cell_name, oss_counter)
     historical_data = model.history
     future = pd.date_range(start=historical_data["ds"].max(), periods=int(nb_points)*96, freq="15min")
@@ -152,12 +120,12 @@ predict_network_activity_interface = gr.Interface(
     title="Cell activity prediction")
 
 
-tabbed_interface = gr.TabbedInterface([oss_counter_forecasting_interface, predict_network_activity_interface],
+gradio_interface = gr.TabbedInterface([oss_counter_forecasting_interface, predict_network_activity_interface],
                                       tab_names=["OSS counter forecasting", "Cell activity prediction"])
 
 
 if __name__ == "__main__":
-    tabbed_interface.launch(
+    gradio_interface.launch(
         server_name="0.0.0.0",
         server_port=7860,
         share=False

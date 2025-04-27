@@ -21,16 +21,18 @@ def read_file(config):
 def add_datetime(df_one_cell):
     """
     Add a unique datetime column to each row of a single cell's data.
+    We first add the day column by indexing repeated times (via sort_values) then
+    we create the datetime column by considering that Day 1 is january first 2025.
 
     Parameters
     ----------
     df_one_cell : pd.DataFrame
-        DataFrame containing one cell's data with a 'Time' column.
+        DataFrame containing one cell's data with a "Time" column.
 
     Returns
     -------
     pd.DataFrame
-        DataFrame with a new 'datetime' column representing a unique timestamp.
+        DataFrame with a new "datetime" column representing a unique datetime
     """
     df_one_cell["temp_Time"] = pd.to_datetime(df_one_cell["Time"], format="%H:%M")
     df_one_cell = df_one_cell.sort_values("temp_Time")
@@ -50,12 +52,12 @@ def replace_missing_dates(df_one_cell):
     Parameters
     ----------
     df_one_cell : pd.DataFrame
-        DataFrame with 'datetime' as a column.
+        DataFrame containing one cell's data
 
     Returns
     -------
     pd.DataFrame
-        DataFrame indexed by datetime, with missing timestamps filled.
+        DataFrame indexed by datetime, with missing datetime filled.
     """
     df_one_cell = df_one_cell.sort_values("datetime")
     df_one_cell.set_index("datetime", inplace=True, drop=True)
@@ -63,23 +65,23 @@ def replace_missing_dates(df_one_cell):
 
 def detect_replace_outliers(df_one_cell, oss_counter, window, threshold):
     """
-    Detect and replace outliers in a metric using Z-score method and rolling statistics.
+    Detect and replace outliers in a metric using Z-score method and rolling mean-std.
 
     Parameters
     ----------
     df_one_cell : pd.DataFrame
-        DataFrame with time-series data.
+        DataFrame containing one cell's data
     oss_counter : str
-        Column name of the OSS counter to clean.
+        Column name of the OSS counter to clean
     window : int
-        Size of the rolling window in time steps.
+        Size of the rolling window
     threshold : float
-        Z-score threshold to identify outliers.
+        Z-score threshold to identify outliers
 
     Returns
     -------
     pd.Series
-        Cleaned series with outliers replaced by time interpolation.
+        Corrected series with outliers replaced via linear interpolation
     """
     df_copy = df_one_cell.copy()
     rolling_mean = df_copy[oss_counter].rolling(window=window, min_periods=1).mean()
@@ -92,21 +94,22 @@ def detect_replace_outliers(df_one_cell, oss_counter, window, threshold):
 
 def process_oss_counters(cell_name, df_one_cell, oss_counters):
     """
-    Process OSS counters by adding datetime, interpolating missing values, and replacing outliers.
+    Process OSS counters by adding datetime, interpolating missing values, and replacing outliers
 
     Parameters
     ----------
     cell_name : str
         Name of the cell.
     df_one_cell : pd.DataFrame
-        DataFrame for a single cell.
+        DataFrame for one cell
     oss_counters : list of str
         List of OSS counter column names to process.
 
     Returns
     -------
     pd.DataFrame
-        Cleaned and processed DataFrame with interpolated values.
+        Corrected and processed ready for oss forecasting.
+
     """
     df_one_cell = add_datetime(df_one_cell)
     df_one_cell.drop(columns=["Unusual"], inplace=True)
@@ -117,32 +120,32 @@ def process_oss_counters(cell_name, df_one_cell, oss_counters):
     return df_processed
 
 
-def add_rolling_features(df, metric, window_size):
+def add_rolling_features(df, oss_counter, window_size):
     """
-    Add rolling mean and max features for a given metric and window size.
+    Add rolling mean and max features for a given oss counter and window size.
 
     Parameters
     ----------
     df : pd.DataFrame
-        DataFrame containing OSS metrics.
-    metric : str
-        Column name of the metric to roll.
+        DataFrame containing oss counter.
+    oss_counter : str
+        Column name of the oss counter to roll.
     window_size : int
-        Window size in hours (each hour assumed to be 4 data points).
+        Window size in hours (each hour has 4 points).
 
     Returns
     -------
     pd.DataFrame
-        DataFrame with new rolling mean and max features.
+        DataFrame with rolling mean and max features.
     """
-    window = window_size * 4  # 4 samples per hour
-    df[f"{metric}_mean_rolling{window_size}h"] = df.groupby("CellName")[metric].transform(lambda x: x.rolling(window).mean())
-    df[f"{metric}_max_rolling{window_size}h"] = df.groupby("CellName")[metric].transform(lambda x: x.rolling(window).max())
+    window = window_size * 4
+    df[f"{oss_counter}_mean_rolling{window_size}h"] = df.groupby("CellName")[oss_counter].transform(lambda x: x.rolling(window).mean())
+    df[f"{oss_counter}_max_rolling{window_size}h"] = df.groupby("CellName")[oss_counter].transform(lambda x: x.rolling(window).max())
     return df
 
 def add_ratio_features(df):
     """
-    Add ratio-based features between download and upload metrics.
+    Add ratio DL/UL features for prb usage, throughput and number of users
 
     Parameters
     ----------
@@ -154,21 +157,21 @@ def add_ratio_features(df):
     pd.DataFrame
         DataFrame with new ratio features.
     """
-    df["thr_dl_to_ul"] = df["meanThr_DL"] / (df["meanThr_UL"] + 1e-6 )
-    df["ue_dl_to_ul"] = df["meanUE_DL"] / (df["meanUE_UL"] + 1e-6 )
-    df["prb_dl_to_ul"] = df["PRBUsageDL"] / (df["PRBUsageUL"] + 1e-6 )
+    df["thr_dl_to_ul"] = df["meanThr_DL"]/(df["meanThr_UL"]+1e-6)
+    df["ue_dl_to_ul"] = df["meanUE_DL"]/(df["meanUE_UL"]+1e-6)
+    df["prb_dl_to_ul"] = df["PRBUsageDL"]/(df["PRBUsageUL"]+1e-6)
     return df
 
 def add_all_features(df, oss_counters):
     """
-    Add rolling and ratio-based features based on configuration.
+    Add rolling and ratio features.
 
     Parameters
     ----------
     df : pd.DataFrame
         Input DataFrame with datetime and OSS counters.
-    config : ConfigParser
-        Configuration object containing OSS counter list.
+    oss_counters : list of str
+         OSS counter list.
 
     Returns
     -------
@@ -189,7 +192,7 @@ def add_all_features(df, oss_counters):
 
 def process_data_for_network_activity_classification(config):
     """
-    Full preprocessing pipeline for classification task.
+    Processing pipeline for cell activity classification.
 
     Parameters
     ----------
@@ -199,7 +202,7 @@ def process_data_for_network_activity_classification(config):
     Returns
     -------
     pd.DataFrame
-        Preprocessed DataFrame ready for classification modeling.
+        Processed DataFrame ready for cell activity classification.
     """
     df = read_file(config)
     oss_counters = literal_eval(config["MODELS"]["OSS_COUNTERS"])
@@ -209,7 +212,7 @@ def process_data_for_network_activity_classification(config):
 
 def process_data_for_oss_counters_forecasting(config):
     """
-    Full preprocessing pipeline for time-series forecasting.
+    Processing pipeline for oss counters forecasting.
 
     Parameters
     ----------
@@ -219,7 +222,7 @@ def process_data_for_oss_counters_forecasting(config):
     Returns
     -------
     pd.DataFrame
-        Preprocessed DataFrame ready for forecasting modeling.
+        Processed DataFrame ready for oss counters forecasting.
     """
     df = read_file(config)
     oss_counters = literal_eval(config["MODELS"]["OSS_COUNTERS"])
