@@ -34,7 +34,6 @@ def fit_evaluate_model(data_processed):
 
     skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
 
-    auc_score_all_folds = []
     f1_score_all_folds = []
     precision_score_all_folds = []
     accuracy_score_all_folds = []
@@ -56,7 +55,6 @@ def fit_evaluate_model(data_processed):
             precision = precision_score(y_val, y_pred)
             recall = recall_score(y_val, y_pred)
             accuracy = accuracy_score(y_val, y_pred)
-            auc = roc_auc_score(y_val, y_proba)
 
 
             precision_scores.append(precision)

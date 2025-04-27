@@ -116,28 +116,6 @@ def process_oss_counters(cell_name, df_one_cell, oss_counters):
     df_processed["CellName"] = df_processed["CellName"].fillna(cell_name)
     return df_processed
 
-#def add_target(df):
-    # """
-    # Add a binary classification target for 24-hour future 'Unusual' status.
-    #
-    # Parameters
-    # ----------
-    # df : pd.DataFrame
-    #     DataFrame with datetime and 'Unusual' column.
-    #
-    # Returns
-    # -------
-    # pd.DataFrame
-    #     DataFrame with a new 'target' column.
-    # """
-    #df["datetime_after_24h"] = df["datetime"] + pd.Timedelta(hours=24)
-    #future = df[["CellName", "datetime", "Unusual"]].copy()
-    #future.rename(columns={"datetime": "datetime_after_24h", "Unusual": "Unusual_after_24h"}, inplace=True)
-    #df = df.merge(future, on=["CellName", "datetime_after_24h"], how="left")
-    #df.rename(columns={"Unusual_after_24h": "target"}, inplace=True)
-    #df.drop(columns=["datetime_after_24h", "Unusual"], inplace=True)
-    #df = df[~df["target"].isna()].reset_index(drop=True)
-    #return df
 
 def add_rolling_features(df, metric, window_size):
     """
