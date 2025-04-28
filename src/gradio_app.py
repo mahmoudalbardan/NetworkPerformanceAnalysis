@@ -83,7 +83,7 @@ def oss_counter_forecasting(cell_name, oss_counter, nb_points):
     df_metrics_cell = df_metrics[(df_metrics["CellName"] == cell_name)&
                                  (df_metrics["oss_counter"] == oss_counter)][["CellName","oss_counter","MAE","RMSE","MAPE"]]
     df_metrics_cell.columns = ["Cell Name", "OSS Counter", "MAE", "RMSE", "MAPE"]
-    df_metrics_oss_counter = df_metrics_agg[["oss_counter","MAE","RMSE","MAPE"]]#[(df_metrics_agg["oss_counter"] == oss_counter)]
+    df_metrics_oss_counter = df_metrics_agg[["oss_counter","MAE","RMSE","MAPE"]]
     df_metrics_oss_counter.columns = ["OSS Counter", "MAE", "RMSE", "MAPE"]
     fig = plt.figure(figsize=(10, 3))
     ax = fig.add_subplot(111)
