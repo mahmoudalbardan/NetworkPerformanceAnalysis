@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.model_selection import StratifiedKFold,GridSearchCV
 from sklearn.ensemble import GradientBoostingClassifier
@@ -25,9 +26,9 @@ def fit_evaluate_model(data_processed):
     X, y = df_X.values, df_y.values
 
     param_grid = {
-        "n_estimators": [10 , 50, 100],
-        "learning_rate": [0.05, 0.1],
-        "max_depth": [3, 5]}
+         "n_estimators": [10 , 50, 100],
+         "learning_rate": [0.05, 0.1],
+         "max_depth": [3, 5]}
 
     skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
     grid_search = GridSearchCV(
@@ -98,6 +99,11 @@ def fit_evaluate_model(data_processed):
     ax.legend()
     fig.savefig("./models/results/network_activity_classifier_metrics.png")
 
+    best_proba_thr_id = np.argmax(average_f1)
+    df_metrics = pd.DataFrame([[average_f1[best_proba_thr_id],average_precision[best_proba_thr_id],
+                               average_accuracy[best_proba_thr_id],average_recall[best_proba_thr_id]]],
+                              columns=["F1 score", "Precision", "Accuracy", "Recall"])
+    df_metrics.to_csv("./models/results/network_activity_classifier_metrics.csv", sep=",", index=False)
     return best_model
 
 

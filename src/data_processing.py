@@ -92,7 +92,7 @@ def detect_replace_outliers(df_one_cell, oss_counter, window, threshold):
     df_copy[oss_counter] = df_copy[oss_counter].interpolate(method="time", limit_direction="both")
     return df_copy[oss_counter]
 
-def process_oss_counters(cell_name, df_one_cell, oss_counters):
+def process_oss_counters(cell_name, df_one_cell, oss_counters, config):
     """
     Process OSS counters by adding datetime, interpolating missing values, and replacing outliers
 
@@ -111,11 +111,13 @@ def process_oss_counters(cell_name, df_one_cell, oss_counters):
         Corrected and processed ready for oss forecasting.
 
     """
+
     df_one_cell = add_datetime(df_one_cell)
-    df_one_cell.drop(columns=["Unusual"], inplace=True)
     df_processed = replace_missing_dates(df_one_cell)
     for counter in oss_counters:
-        df_processed[counter] = detect_replace_outliers(df_processed, counter, window=96, threshold=4)
+        df_processed[counter] = detect_replace_outliers(df_processed, counter,
+                                                        window=int(config["PROCESSING"]["OUTLIER_DETECTION_WINDOW"]),
+                                                        threshold=float(config["PROCESSING"]["OUTLIER_DETECTION_THRESHOLD"]))
     df_processed["CellName"] = df_processed["CellName"].fillna(cell_name)
     return df_processed
 
@@ -162,7 +164,7 @@ def add_ratio_features(df):
     df["prb_dl_to_ul"] = df["PRBUsageDL"]/(df["PRBUsageUL"]+1e-6)
     return df
 
-def add_all_features(df, oss_counters):
+def add_all_features(df, oss_counters,config):
     """
     Add rolling and ratio features.
 
@@ -178,7 +180,7 @@ def add_all_features(df, oss_counters):
     pd.DataFrame
         DataFrame with added features.
     """
-    window_sizes = [1, 5, 7, 15]
+    window_sizes = literal_eval(config["PROCESSING"]["ROLLING_FEATURES_WINDOW_SIZES"])
     df.rename(columns={"Unusual": "target"}, inplace=True)
     for oss_counter in oss_counters:
         for ws in window_sizes:
@@ -206,9 +208,12 @@ def process_data_for_network_activity_classification(config):
     """
     df = read_file(config)
     oss_counters = literal_eval(config["MODELS"]["OSS_COUNTERS"])
-    df = pd.concat([add_datetime(group) for _, group in df.groupby("CellName")]).reset_index(drop=True)
-    df = add_all_features(df, oss_counters)
-    return df
+    df_processed = pd.concat([
+        process_oss_counters(cell_name, group, oss_counters, config)
+        for cell_name, group in df.groupby("CellName")
+    ]).reset_index()
+    df_processed = add_all_features(df_processed, oss_counters, config)
+    return df_processed
 
 def process_data_for_oss_counters_forecasting(config):
     """
@@ -225,9 +230,10 @@ def process_data_for_oss_counters_forecasting(config):
         Processed DataFrame ready for oss counters forecasting.
     """
     df = read_file(config)
+    df.drop(columns=["Unusual"], inplace=True)
     oss_counters = literal_eval(config["MODELS"]["OSS_COUNTERS"])
     df_processed = pd.concat([
-        process_oss_counters(cell_name, group, oss_counters)
+        process_oss_counters(cell_name, group, oss_counters, config)
         for cell_name, group in df.groupby("CellName")
     ]).reset_index()
     return df_processed

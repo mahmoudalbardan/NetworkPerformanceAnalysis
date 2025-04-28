@@ -31,6 +31,8 @@ def prepare_data_for_net_activity(file_test):
 
 
 def predict_network_activity(file_test,cell_name):
+    df_metrics = pd.read_csv("./models/results/network_activity_classifier_metrics.csv", sep=",")
+
     model = load_model("./models/network_activity_classifier.pkl")
     df = prepare_data_for_net_activity(file_test)
     df_to_predict = df.drop(columns=["CellName", "datetime"])
@@ -63,7 +65,7 @@ def predict_network_activity(file_test,cell_name):
     ax.set_title(f"Activity of cell {cell_name}")
     plt.xticks(rotation=35)
     img_metrics_path = "./models/results/network_activity_classifier_metrics.png"
-    return img_metrics_path , fig_feature_importance, fig_prediction
+    return img_metrics_path , df_metrics.round(3), fig_feature_importance, fig_prediction
 
 
 def load_model_forecasting(cell_name, oss_counter):
@@ -95,7 +97,7 @@ def oss_counter_forecasting(cell_name, oss_counter, nb_points):
     ax.set_ylabel("Value")
     ax.legend()
 
-    return fig, df_metrics_cell, df_metrics_oss_counter, forecast[["ds", "yhat"]]
+    return fig, df_metrics_cell.round(3), df_metrics_oss_counter.round(3), forecast[["ds", "yhat"]]
 
 
 oss_counter_forecasting_interface = gr.Interface(
@@ -108,7 +110,7 @@ oss_counter_forecasting_interface = gr.Interface(
     outputs=[
         gr.Plot(label="Forecast plot", format="png"),
         gr.Dataframe(label="Model performance for this specific cell/oss couple"),
-        gr.Dataframe(label="Model performance for this specific OSS accross all cells"),
+        gr.Dataframe(label="Model performance for OSS counters accross all cells"),
         gr.Dataframe(label="Forecast data")
     ],
     title="OSS counter forecasting")
@@ -117,6 +119,7 @@ predict_network_activity_interface = gr.Interface(
     fn=predict_network_activity,
     inputs = [gr.File(label="Upload test file"),gr.Radio(cell_names, label="Cell Name") ],
     outputs=[gr.Image(label="Model Performances", format="png"),
+             gr.Dataframe(label="Model Performances accross all folds for the best probability prediction threshold"),
              gr.Plot(label="Feature importances", format="png"),
              gr.Plot(label="Model Prediction", format="png")],
     title="Cell activity prediction")
