@@ -34,6 +34,10 @@ Here is the expected gradio dashboard :
 - `Dockerfile` – docker file.
 - `requirements.txt` – python packages.
 
+## Prerequisites
+
+- Make sure you have Docker installed on your machine: [https://www.docker.com/get-started/](https://www.docker.com/get-started/)
+
 ## 🚀 Launch and test the app on your Local Machine
 
 1. Clone the repository
