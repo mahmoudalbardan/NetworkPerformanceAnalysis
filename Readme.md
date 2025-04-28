@@ -44,7 +44,7 @@ cd NetworkPerformanceAnalysis
 pip install -r requirements.txt
 ```
 
-2. **OPTIONAL**: *Run the training scripts and tests(the models are already trained and saved in the repository;  
+2. *Optional: Run the training scripts (might be slow due to the grid search cv) and tests (the models are already trained and saved in the repository);  
 You can add the test run command into your .yml file if you want to build CI/CD pipeline*.
 ```bash
 python -m unittest discover -s tests 
