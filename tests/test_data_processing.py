@@ -44,7 +44,8 @@ class TestDataProcessing(unittest.TestCase):
             "PRBUsageDL": [3, 2, 4, 3, 2, 4, 100, 3, 2, 4, 3, 2, 4]
         })
         df_with_outliers.set_index('datetime', inplace=True)
-        df_without_outliers_prbdl = detect_replace_outliers(df_with_outliers, "PRBUsageDL", 5, 1.5)
+        df_without_outliers_prbdl = detect_replace_outliers(df_with_outliers, "PRBUsageDL", 5,
+                                                            1.5)
         self.assertEqual(len(df_with_outliers), len(df_without_outliers_prbdl))
         self.assertEqual(df_without_outliers_prbdl.isna().sum().sum(), 0)
 

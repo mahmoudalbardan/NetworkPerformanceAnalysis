@@ -63,9 +63,10 @@ def replace_missing_dates(df_one_cell):
     df_one_cell.set_index("datetime", inplace=True, drop=True)
     return df_one_cell.asfreq("15min")
 
-def detect_replace_outliers(df_one_cell, oss_counter, window, threshold):
+def detect_replace_outliers(df_one_cell, oss_counter, window, coefficient_iqr):
     """
-    Detect and replace outliers in a metric using Z-score method and rolling mean-std.
+    Detect and replace outliers using interquartile method on rolling windows.
+    Outlier if outside the interval [q1-iqr*coefficient_iqr; q3+iqr*coefficient_iqr].
 
     Parameters
     ----------
@@ -74,23 +75,27 @@ def detect_replace_outliers(df_one_cell, oss_counter, window, threshold):
     oss_counter : str
         Column name of the OSS counter to clean
     window : int
-        Size of the rolling window
-    threshold : float
-        Z-score threshold to identify outliers
-
+        Size of the rolling window, specified in configuration.ini
+    coefficient_iqr: float
+        IQR coefficient to identify outliers, specified in configuration.ini
     Returns
     -------
     pd.Series
         Corrected series with outliers replaced via linear interpolation
     """
     df_copy = df_one_cell.copy()
-    rolling_mean = df_copy[oss_counter].rolling(window=window, min_periods=1).mean()
-    rolling_std = df_copy[oss_counter].rolling(window=window, min_periods=1).std()
-    z_scores = (df_copy[oss_counter][window:] - rolling_mean[window:]) / rolling_std[window:]
-    outliers = z_scores.abs() > threshold
+    rolling_q1 = df_copy[oss_counter].rolling(window=window, min_periods=1).quantile(0.25)
+    rolling_q3 = df_copy[oss_counter].rolling(window=window, min_periods=1).quantile(0.75)
+    rolling_iqr = rolling_q3 - rolling_q1
+    lower_bound = rolling_q1-coefficient_iqr*rolling_iqr
+    upper_bound = rolling_q3+coefficient_iqr*rolling_iqr
+    outliers = ((df_copy[oss_counter]<lower_bound) |
+                (df_copy[oss_counter] > upper_bound))
+
     df_copy.loc[outliers[outliers].index, oss_counter] = np.nan
     df_copy[oss_counter] = df_copy[oss_counter].interpolate(method="time", limit_direction="both")
     return df_copy[oss_counter]
+
 
 def process_oss_counters(cell_name, df_one_cell, oss_counters, config):
     """
@@ -116,8 +121,8 @@ def process_oss_counters(cell_name, df_one_cell, oss_counters, config):
     df_processed = replace_missing_dates(df_one_cell)
     for counter in oss_counters:
         df_processed[counter] = detect_replace_outliers(df_processed, counter,
-                                                        window=int(config["PROCESSING"]["OUTLIER_DETECTION_WINDOW"]),
-                                                        threshold=float(config["PROCESSING"]["OUTLIER_DETECTION_THRESHOLD"]))
+                        window=int(config["PROCESSING"]["OUTLIER_DETECTION_WINDOW"]),
+                        coefficient_iqr=float(config["PROCESSING"]["OUTLIER_DETECTION_COEFFICIENT_IQR"]))
     df_processed["CellName"] = df_processed["CellName"].fillna(cell_name)
     return df_processed
 
